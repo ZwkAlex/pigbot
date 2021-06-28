@@ -114,7 +114,8 @@ public class MiraiHandler {
                             log.info("[QQ-Message] 失去连接，尝试重连...");
                             webSocketClient.reconnect();
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        log.info("[QQ-Message] WebSocket监控线程出错 {}",e.getMessage());
                     }
                 }
             }).start();
@@ -174,7 +175,8 @@ public class MiraiHandler {
                             log.info("[QQ-Event] 失去连接，尝试重连...");
                             webSocketClient.reconnect();
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        log.info("[QQ-Event] WebSocket监控线程出错 {}",e.getMessage());
                     }
                 }
             }).start();

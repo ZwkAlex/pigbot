@@ -64,9 +64,9 @@ public class Jx3Handler {
                             //开服播报
                             List<Message> messagesList = new ArrayList<>();
                             if (msg.getData().getInteger("status") == 1) {
-                                String s = TimestampToStringDetail(msg.getEcho()) +
-                                        "-" +msg.getData().getString("server") +
-                                        "- 【开服】";
+                                String s = TimestampToStringDetail(-1) +
+                                        " " +msg.getData().getString("server") +
+                                        "【开服】";
                                 messagesList.add(Message.builder().type(MiraiConstant.MESSAGE_TYPE_TEXT).text(s).build());
                             }
                             miraHandler.getGroupSet().forEach(group -> {
@@ -99,8 +99,8 @@ public class Jx3Handler {
                             log.info("[JX3API] 失去连接，尝试重连...");
                             webSocketClient.reconnect();
                         }
-                    } catch (Exception ignored) {
-
+                    } catch (Exception e) {
+                        log.info("[JX3API] WebSocket监控线程出错 {}",e.getMessage());
                     }
                 }
             }).start();
@@ -312,11 +312,17 @@ public class Jx3Handler {
 
     private static String TimestampToString(long ts){
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+        if(ts == -1){
+            return df.format(new Date());
+        }
         return df.format(ts*1000);
     }
 
     private static String TimestampToStringDetail(long ts){
         DateFormat df = new SimpleDateFormat("MM/dd HH:mm");
+        if(ts == -1){
+            return df.format(new Date());
+        }
         return df.format(ts*1000);
     }
 
