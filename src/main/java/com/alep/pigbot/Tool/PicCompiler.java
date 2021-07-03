@@ -11,9 +11,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-@SuppressWarnings("DuplicatedCode")
-@Component
-@Data
 @Slf4j
 public class PicCompiler {
     private static BufferedImage img;

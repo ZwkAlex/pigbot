@@ -24,17 +24,14 @@ import java.util.Map;
 @Slf4j
 public class Jx3PicCompiler {
     @Getter
-//    @Value("${server.url}")
-    private String url = "http://127.0.0.1:8888/image";
-
-    @Resource
-    private PicCompiler picCompiler = new PicCompiler();
-
+    @Value("${server.url}")
+    private String url;
 
     public String ItemPriceImageCompiler(Jx3Response itemPrice) {
         String urlPath = null;
         try{
             JSONArray priceList = JSONArray.parseArray(itemPrice.getData());
+            PicCompiler picCompiler = new PicCompiler();
             for(Object dataObject : priceList){
                 boolean region = false;
                 JSONArray regionDataArray = JSONArray.parseArray(dataObject.toString());
@@ -62,9 +59,9 @@ public class Jx3PicCompiler {
                 }
                 picCompiler.NewLine(20);
             }
-            MakeTailWithTime(picCompiler.TimestampToString(itemPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern()));
-            BufferedImage img = picCompiler.Finish();
-            urlPath = SaveImage(img,Long.toString(itemPrice.getTime()));
+            MakeTailWithTime(picCompiler, picCompiler.TimestampToString(itemPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern()));
+            picCompiler.Finish();
+            urlPath = SaveImage(picCompiler,Long.toString(itemPrice.getTime()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -74,6 +71,7 @@ public class Jx3PicCompiler {
     public String GoldPriceImageCompiler(Jx3Response goldPrice) {
         String urlPath = null;
         try{
+            PicCompiler picCompiler = new PicCompiler();
             for( Map.Entry<String, String> entry :Jx3Constant.Gold.entrySet()) {
                 JSONObject data = JSONObject.parseObject(goldPrice.getData());
                 if(!picCompiler.getHeader()){
@@ -92,16 +90,16 @@ public class Jx3PicCompiler {
                 }
             }
 
-            MakeTailWithTime(picCompiler.TimestampToString(goldPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern()));
-            BufferedImage img = picCompiler.Finish();
-            urlPath = SaveImage(img,Long.toString(goldPrice.getTime()));
+            MakeTailWithTime(picCompiler,picCompiler.TimestampToString(goldPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern()));
+            picCompiler.Finish();
+            urlPath = SaveImage(picCompiler,Long.toString(goldPrice.getTime()));
         }catch(Exception e){
             e.printStackTrace();
         }
         return urlPath;
     }
 
-    private void MakeTailWithTime(String time){
+    private void MakeTailWithTime(PicCompiler picCompiler,String time){
         picCompiler.NewLine(20);
         picCompiler.DrawLine();
         picCompiler.NewLine(Jx3Constant.TAIL_SIZE + 5);
@@ -112,11 +110,11 @@ public class Jx3PicCompiler {
         picCompiler.WriteStringRight(tailString,Jx3Constant.StringStyle.TAIL);
     }
 
-    private String SaveImage(BufferedImage img, String timestamp) throws IOException {
+    private String SaveImage(PicCompiler picCompiler, String timestamp) throws IOException {
         String fileName = timestamp +"_"+ (int) (Math.random() * 100) ;
         String filePath = "./local_data/" + fileName + ".png";
         String urlPath = url + "?id="+ fileName;
-        ImageIO.write(img, "png", new File(filePath));
+        ImageIO.write(picCompiler.getImage(), "png", new File(filePath));
         return urlPath;
     }
 
