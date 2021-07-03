@@ -7,7 +7,6 @@ import com.alep.pigbot.entity.Jx3Response;
 import com.alep.pigbot.entity.Jx3SocketData;
 import com.alep.pigbot.entity.Message;
 import com.alep.pigbot.entity.QqGroup;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +35,8 @@ public class Jx3Handler {
     JxQueryApiService jxQueryApiService;
     @Resource
     MiraiHandler miraHandler;
+    @Resource
+    Jx3PicCompiler jx3PicCompiler;
 
     /*
     * WebSocket 模块
@@ -64,7 +65,7 @@ public class Jx3Handler {
                             //开服播报
                             List<Message> messagesList = new ArrayList<>();
                             if (msg.getData().getInteger("status") == 1) {
-                                String s = TimestampToStringDetail(-1) +
+                                String s = TimestampToString(-1, Jx3Constant.DayPattern.DETAIL.getPattern()) +
                                         " " +msg.getData().getString("server") +
                                         "【开服】";
                                 messagesList.add(Message.builder().type(MiraiConstant.MESSAGE_TYPE_TEXT).text(s).build());
@@ -126,7 +127,8 @@ public class Jx3Handler {
             respText.append("没有本群服务器信息！请使用→ 服务器 服务器名 格式绑定本群服务器。");
         }else{
             Jx3Response serverStatus = jxQueryApiService.getServerStatus(qqGroup.getServer());
-            respText.append(TimestampToStringDetail(serverStatus.getTime())).append(" - ").append(qqGroup.getServer());
+            respText.append(TimestampToString(serverStatus.getTime(),Jx3Constant.DayPattern.SHORT.getPattern()))
+                    .append(" - ").append(qqGroup.getServer());
             if (JSONObject.parseObject(serverStatus.getData()).getInteger("status") == 1) {
                 respText.append(" - 已开服");
             } else {
@@ -134,7 +136,7 @@ public class Jx3Handler {
             }
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText.toString()));
+        messagesList.add(BuildTextMessage(respText.toString()));
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
@@ -147,18 +149,21 @@ public class Jx3Handler {
             respText = "本群绑定服务器为 【" + qqGroup.getServer() + "】";
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText));
+        messagesList.add(BuildTextMessage(respText));
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
     public void getGoldPrice(String groupId){
         QqGroup qqGroup = qqGroupMapper.selectOne(new LambdaQueryWrapper<QqGroup>().eq(QqGroup::getGroupId, groupId));
+
+        /*
+        //旧版文字回复
         StringBuilder respText = new StringBuilder();
         if (qqGroup == null) {
             respText = new StringBuilder("没有本群服务器信息！请使用→ 服务器 服务器名 格式绑定本群服务器。");
         }else{
             Jx3Response goldPrice =jxQueryApiService.getGoldPrice(qqGroup.getServer());
-            respText.append(TimestampToString(goldPrice.getTime()))
+            respText.append(TimestampToString(goldPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern()))
                     .append("\n服务器【")
                     .append(qqGroup.getServer())
                     .append("】金价：\n");
@@ -172,7 +177,17 @@ public class Jx3Handler {
             }
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText.toString()));
+        messagesList.add(BuildTextMessage(respText.toString()));
+        miraHandler.sendGroupMessage(groupId, messagesList);
+        */
+        List<Message> messagesList = new ArrayList<>();
+        if (qqGroup == null) {
+            messagesList.add(BuildTextMessage("没有本群服务器信息！请使用→ 服务器 服务器名 格式绑定本群服务器。"));
+        }else{
+            Jx3Response goldPrice =jxQueryApiService.getGoldPrice(qqGroup.getServer());
+            String url = jx3PicCompiler.GoldPriceImageCompiler(goldPrice);
+            messagesList.add(BuildImageMessage(url));
+        }
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
@@ -187,8 +202,8 @@ public class Jx3Handler {
             respText.append(key).append(" 目标").append("\n");
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText.toString()));
-        miraHandler.sendFriendMessage(groupId, messagesList);
+        messagesList.add(BuildTextMessage(respText.toString()));
+        miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
 
@@ -215,24 +230,26 @@ public class Jx3Handler {
             respText = "绑定服务器失败";
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText));
+        messagesList.add(BuildTextMessage(respText));
         miraHandler.sendGroupMessage(groupId, messagesList);
 
     }
 
     public void getItemPrice(String groupId,String text){
         String item = TextExtract(text,"物价");
-        StringBuilder respText = new StringBuilder();
         Jx3Response itemPrice =jxQueryApiService.getItemPrice(item);
+        /*
+        //旧版文字回复
+        StringBuilder respText = new StringBuilder();
         try{
             JSONArray priceList = JSONArray.parseArray(itemPrice.getData());
-            StringBuilder itemname = new StringBuilder();
+            StringBuilder itemName = new StringBuilder();
             for(Object a : priceList){
                 respText.append("\n");
                 for(Object b :JSONArray.parseArray(a.toString())){
                     JSONObject data = JSONObject.parseObject(b.toString());
-                    if(itemname.toString().equals(""))
-                        itemname.append(data.getString("exterior"))
+                    if(itemName.toString().equals(""))
+                        itemName.append(data.getString("exterior"))
                                 .append("-")
                                 .append(data.getString("itemname"))
                                 .append("\n");
@@ -245,12 +262,22 @@ public class Jx3Handler {
                             .append(")").append("\n");
                 }
             }
-            respText.insert(0,TimestampToString(itemPrice.getTime())+"\n"+itemname);
+            respText.insert(0,TimestampToString(itemPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern())
+                    +"\n"+itemName);
         }catch(Exception e){
             respText.append("没有找到物品【").append(item).append("】的价格。或许名称不正确");
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText.toString()));
+        messagesList.add(BuildTextMessage(respText.toString()));
+        miraHandler.sendGroupMessage(groupId, messagesList);
+        */
+        String url = jx3PicCompiler.ItemPriceImageCompiler(itemPrice);
+        List<Message> messagesList = new ArrayList<>();
+        if(url == null){
+            messagesList.add(BuildTextMessage("没有找到物品【"+item+"】的价格。或许名称不正确"));
+        }else{
+            messagesList.add(BuildImageMessage(url));
+        }
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
@@ -271,7 +298,7 @@ public class Jx3Handler {
             respText.append("【").append(name).append("】不是正确的心法称呼");
         }
         List<Message> messagesList = new ArrayList<>();
-        messagesList.add(BulidTextMessage(respText.toString()));
+        messagesList.add(BuildTextMessage(respText.toString()));
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
@@ -284,14 +311,14 @@ public class Jx3Handler {
             if(text.contains("pve")||text.contains("PVE")){
                 JSONObject equip = jxQueryApiService.getEquip(name);
                 if(equip != null){
-                    messagesList.add(Message.builder().type(MiraiConstant.MESSAGE_TYPE_IMG).url(equip.getString("pveUrl")).build());
+                    messagesList.add(BuildImageMessage(equip.getString("pveUrl")));
                 }else{
                     respText.append("找不到【").append(text).append("】的PVE配装，请用正确的全称");
                 }
             }else if(text.contains("pvp")||text.contains("PVP")){
                 JSONObject equip = jxQueryApiService.getEquip(name);
                 if(equip != null){
-                    messagesList.add(Message.builder().type(MiraiConstant.MESSAGE_TYPE_IMG).url(equip.getString("pvpUrl")).build());
+                    messagesList.add(BuildImageMessage(equip.getString("pvpUrl")));
                 }else{
                     respText.append("找不到【").append(text).append("】的PVP配装，请用正确的全称");
                 }
@@ -302,7 +329,7 @@ public class Jx3Handler {
             respText.append("【").append(text).append("】不是正确的心法称呼");
         }
 
-        messagesList.add(BulidTextMessage(respText.toString()));
+        messagesList.add(BuildTextMessage(respText.toString()));
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
@@ -310,16 +337,8 @@ public class Jx3Handler {
     * 其他工具
     * */
 
-    private static String TimestampToString(long ts){
-        DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
-        if(ts == -1){
-            return df.format(new Date());
-        }
-        return df.format(ts*1000);
-    }
-
-    private static String TimestampToStringDetail(long ts){
-        DateFormat df = new SimpleDateFormat("MM/dd HH:mm");
+    private static String TimestampToString(long ts , String pattern){
+        DateFormat df = new SimpleDateFormat(pattern);
         if(ts == -1){
             return df.format(new Date());
         }
@@ -395,8 +414,13 @@ public class Jx3Handler {
         }
         return null;
     }
-    private Message BulidTextMessage(String text){
+
+    private Message BuildTextMessage(String text){
         return Message.builder().type(MiraiConstant.MESSAGE_TYPE_TEXT).text(text).build();
+    }
+
+    private Message BuildImageMessage(String url){
+        return Message.builder().type(MiraiConstant.MESSAGE_TYPE_IMG).text(url).build();
     }
 
     public Jx3Handler getInstance(){

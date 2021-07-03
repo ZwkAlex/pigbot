@@ -196,7 +196,8 @@ public class MiraiHandler {
 
     private void Test(String id) {
         try{
-            Jx3Constant.allKey.get("使用说明").invoke(jx3Handler.getInstance(),id);
+//            Jx3Constant.allKey.get("使用说明").invoke(jx3Handler.getInstance(),id);
+            Jx3Constant.noAllKey.get("物价").invoke(jx3Handler.getInstance(),id,"鼠金");
         }catch(Exception ignored){}
 
 //        List<Message> messagesList = new ArrayList<>();

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import static java.util.Arrays.asList;
 
+import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +52,7 @@ public class Jx3Constant {
 
     public static final Map<String, Method> allKey = new HashMap<>();
     public static final Map<String, Method> noAllKey = new HashMap<>();
-    {
+    static {
         try {
             allKey.put("开服", Jx3Handler.class.getDeclaredMethod("getServerStatus",String.class));
             allKey.put("服务器", Jx3Handler.class.getDeclaredMethod("getBindServer",String.class));
@@ -102,5 +103,32 @@ public class Jx3Constant {
 
     }
 
+    @Getter
+    @AllArgsConstructor
+    public enum DayPattern {
+        LONG( "yyyy/MM/dd"),
+        SHORT("MM/dd HH:mm"),
+        DETAIL("HH:mm");
+
+        private String pattern;
+    }
+
+
+    public static final int HEADER_SIZE = 45;
+    public static final int TITLE_SIZE = 35;
+    public static final int CONTEXT_SIZE = 25;
+    public static final int TAIL_SIZE = 15;
+
+    @Getter
+    @AllArgsConstructor
+    public enum StringStyle {
+        Header(new Font("微软雅黑" , Font.BOLD, HEADER_SIZE),new Color(207,181,59)),
+        TITLE(new Font("微软雅黑" , Font.BOLD, TITLE_SIZE),Color.BLACK),
+        CONTEXT(new Font("微软雅黑" , Font.BOLD, CONTEXT_SIZE),Color.BLACK),
+        TAIL(new Font("微软雅黑" , Font.BOLD, TAIL_SIZE),Color.GRAY);
+
+        private Font font;
+        private Color color;
+    }
 }
 
