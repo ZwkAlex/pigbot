@@ -420,7 +420,7 @@ public class Jx3Handler {
     }
 
     private Message BuildImageMessage(String url){
-        return Message.builder().type(MiraiConstant.MESSAGE_TYPE_IMG).text(url).build();
+        return Message.builder().type(MiraiConstant.MESSAGE_TYPE_IMG).url(url).build();
     }
 
     public Jx3Handler getInstance(){
