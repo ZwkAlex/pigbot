@@ -10,6 +10,7 @@ import com.alep.pigbot.dao.QqGroupMapper;
 import com.alep.pigbot.entity.*;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
@@ -19,6 +20,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
@@ -29,6 +32,7 @@ import java.util.*;
 @Slf4j
 public class Jx3Handler {
 
+    private static List<String> saohua = new ArrayList<>();
     private static Map<String, RandomTalkSetting> randomTalk = new HashMap<>();
     @Resource
     QqGroupMapper qqGroupMapper;
@@ -49,6 +53,18 @@ public class Jx3Handler {
                 @Override
                 public void onOpen(ServerHandshake handshakeData) {
                     log.info("[JX3API] 连接成功");
+                    qqGroupMapper.selectList(new QueryWrapper<>()).forEach((group)->{
+                        randomTalk.put(group.getGroupId(),new RandomTalkSetting(new DateTime(),group.getRandomTalk()));
+                        log.info("[骚话] 群"+group.getGroupId()+"设置随机骚话,模式："+group.getRandomTalk());
+                    });
+                    try{
+                        if(saohua.size() != 0) return;
+                        BufferedReader in = new BufferedReader(new FileReader("./local_data/text.txt"));
+                        String str;
+                        while((str=in.readLine())!=null){
+                            saohua.add(str);
+                        }
+                    }catch(Exception ignored){}
                 }
 
                 @Override
@@ -393,7 +409,7 @@ public class Jx3Handler {
             randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),qqGroup.getRandomTalk()));
             log.info("[骚话] 群"+groupId+"设置随机骚话,模式："+qqGroup.getRandomTalk());
         }else {
-            if (DateUtil.between(randomTalk.get(groupId).getDate(), new DateTime(), DateUnit.MINUTE) > 3) {
+            if (DateUtil.between(randomTalk.get(groupId).getDate(), new DateTime(), DateUnit.MINUTE) >= 2) {
                 int mode = randomTalk.get(groupId).getMode();
                 int random = -1;
                 switch(mode){
@@ -401,7 +417,7 @@ public class Jx3Handler {
                         return;
                     case 1:
                         random = RandomUtil.randomInt(100);
-                        if(random <= 50){//一半机率为骚话
+                        if(random <= 50){//50机率为骚话
                             random = 0;
                         }else{
                             random = RandomUtil.randomInt(1,4);
@@ -409,20 +425,28 @@ public class Jx3Handler {
                         break;
                     case 2:
                         random = RandomUtil.randomInt(100);
-                        if(random <= 50){//一半机率为祖安
+                        if(random <= 50){//50机率为祖安
                             random = 4;
                         }else{
                             random = RandomUtil.randomInt(0,4);
                         }
                         break;
                 }
-                JSONObject data = jxQueryApiService.getRandomTalk(random);
-                if(data == null) return;
-                randomTalk.put(groupId, new RandomTalkSetting(new DateTime(),mode));
                 List<Message> messagesList = new ArrayList<>();
-                messagesList.add(BuildTextMessage(data.getString("text")));
+                if(RandomUtil.randomInt(100) <= 80 || saohua.size()==0){
+                    //网络骚话
+                    JSONObject data = jxQueryApiService.getRandomTalk(random);
+                    if(data == null) return;
+                    randomTalk.put(groupId, new RandomTalkSetting(new DateTime(),mode));
+                    messagesList.add(BuildTextMessage(data.getString("text")));
+                    log.info("[骚话] 网络骚话");
+                }else{
+                    //本地骚话
+                    messagesList.add(BuildTextMessage(saohua.get(RandomUtil.randomInt(saohua.size()))));
+                    log.info("[骚话] 本地骚话");
+                }
+
                 miraHandler.sendGroupMessage(groupId, messagesList);
-                log.info("[骚话] 在群" + groupId + "进行骚话");
             }
         }
     }
