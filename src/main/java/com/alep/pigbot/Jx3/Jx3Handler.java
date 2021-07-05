@@ -1,12 +1,13 @@
 package com.alep.pigbot.Jx3;
 
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUnit;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.alep.pigbot.Mirai.MiraiConstant;
 import com.alep.pigbot.Mirai.MiraiHandler;
 import com.alep.pigbot.dao.QqGroupMapper;
-import com.alep.pigbot.entity.Jx3Response;
-import com.alep.pigbot.entity.Jx3SocketData;
-import com.alep.pigbot.entity.Message;
-import com.alep.pigbot.entity.QqGroup;
+import com.alep.pigbot.entity.*;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,7 @@ import java.util.*;
 @Slf4j
 public class Jx3Handler {
 
-
+    private static Map<String, RandomTalkSetting> randomTalk = new HashMap<>();
     @Resource
     QqGroupMapper qqGroupMapper;
     @Resource
@@ -101,7 +102,7 @@ public class Jx3Handler {
                             webSocketClient.reconnect();
                         }
                     } catch (Exception e) {
-                        log.info("[JX3API] WebSocket监控线程出错 {}",e.getMessage());
+                        log.info("[JX3API] WebSocket监控线程Error {}",e.getMessage());
                     }
                 }
             }).start();
@@ -155,7 +156,6 @@ public class Jx3Handler {
 
     public void getGoldPrice(String groupId){
         QqGroup qqGroup = qqGroupMapper.selectOne(new LambdaQueryWrapper<QqGroup>().eq(QqGroup::getGroupId, groupId));
-
         /*
         //旧版文字回复
         StringBuilder respText = new StringBuilder();
@@ -182,7 +182,7 @@ public class Jx3Handler {
         */
         List<Message> messagesList = new ArrayList<>();
         if (qqGroup == null) {
-            messagesList.add(BuildTextMessage("没有本群服务器信息！请使用→ 服务器 服务器名 格式绑定本群服务器。"));
+            messagesList.add(BuildTextMessage("没有本群服务器信息！请使用[ 服务器 服务器名 ]格式绑定本群服务器。"));
         }else{
             Jx3Response goldPrice =jxQueryApiService.getGoldPrice(qqGroup.getServer());
             String url = jx3PicCompiler.GoldPriceImageCompiler(goldPrice);
@@ -191,7 +191,9 @@ public class Jx3Handler {
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
-    public void getManual(String groupId){
+    public void getFunction(String groupId){
+        /*
+        //旧版文字回复
         StringBuilder respText = new StringBuilder();
         respText.append("目前包含以下功能:\n").append("- 以下功能无需提供目标\n");
         for(String key:Jx3Constant.allKey.keySet()){
@@ -203,6 +205,10 @@ public class Jx3Handler {
         }
         List<Message> messagesList = new ArrayList<>();
         messagesList.add(BuildTextMessage(respText.toString()));
+        miraHandler.sendGroupMessage(groupId, messagesList);
+         */
+        List<Message> messagesList = new ArrayList<>();
+        messagesList.add(BuildImageMessage(jx3PicCompiler.FunctionPicCompiler()));
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
@@ -219,6 +225,7 @@ public class Jx3Handler {
                 qqGroup = new QqGroup();
                 qqGroup.setGroupId(groupId);
                 qqGroup.setServer(server);
+                qqGroup.setRandomTalk(1);
                 qqGroupMapper.insert(qqGroup);
                 respText = "绑定群号：" + groupId + "\n绑定服务器： " + server;
             } else {
@@ -227,7 +234,7 @@ public class Jx3Handler {
                 respText = "切换当前服务器至【" + qqGroup.getServer() + "】";
             }
         }else{
-            respText = "绑定服务器失败";
+            respText = server + "服务器名称未收录，请尽量使用全称";
         }
         List<Message> messagesList = new ArrayList<>();
         messagesList.add(BuildTextMessage(respText));
@@ -332,6 +339,82 @@ public class Jx3Handler {
         messagesList.add(BuildTextMessage(respText.toString()));
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
+
+    public void getGoldPriceWithServer(String groupId,String text){
+        String server = TextExtract(text,"金价");
+        List<Message> messagesList = new ArrayList<>();
+        if(isServerName(server)){
+            Jx3Response goldPrice =jxQueryApiService.getGoldPrice(getRealServerName(server));
+            String url = jx3PicCompiler.GoldPriceImageCompiler(goldPrice);
+            messagesList.add(BuildImageMessage(url));
+        }else{
+            messagesList.add(BuildTextMessage("服务器名称未收录，请尽量使用全称"));
+        }
+
+        miraHandler.sendGroupMessage(groupId, messagesList);
+    }
+
+    public void setRandomTalk(String groupId,String text){
+        String s = TextExtract(text,"骚话");
+        List<Message> messagesList = new ArrayList<>();
+        QqGroup qqGroup = qqGroupMapper.selectOne(new LambdaQueryWrapper<QqGroup>().eq(QqGroup::getGroupId, groupId));
+        if(qqGroup != null){
+            if(s.contains("开")){
+                qqGroup.setRandomTalk(1);
+                qqGroupMapper.updateById(qqGroup);
+                randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),1));
+                messagesList.add(BuildTextMessage("随机骚话模式已开启"));
+            }else if(s.contains("关")){
+                qqGroup.setRandomTalk(0);
+                qqGroupMapper.updateById(qqGroup);
+                randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),0));
+                messagesList.add(BuildTextMessage("随机骚话模式已关闭"));
+            }else if(s.contains("祖安")){
+                qqGroup.setRandomTalk(2);
+                qqGroupMapper.updateById(qqGroup);
+                randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),2));
+                messagesList.add(BuildTextMessage("随机骚话 【祖安】 模式已开启 - [口吐芬芳 请慎开] "));
+            }else{
+                messagesList.add(BuildTextMessage("请使用 [开] 或者 [关] 或者 [祖安] 表示你想要的操作，关闭祖安模式请使用 [骚话 开] "));
+            }
+
+        }else{
+            messagesList.add(BuildTextMessage("请先绑定服务器后使用 格式[ 绑定服务器 服务器名 ]"));
+        }
+        miraHandler.sendGroupMessage(groupId, messagesList);
+    }
+
+
+    //特殊
+    public void TalkRandom(String groupId){
+        if(!randomTalk.containsKey(groupId)){
+            QqGroup qqGroup = qqGroupMapper.selectOne(new LambdaQueryWrapper<QqGroup>().eq(QqGroup::getGroupId, groupId));
+            randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),qqGroup.getRandomTalk()));
+            log.info("[骚话] 群"+groupId+"设置随机骚话,模式："+qqGroup.getRandomTalk());
+        }else {
+            if (DateUtil.between(randomTalk.get(groupId).getDate(), new DateTime(), DateUnit.MINUTE) > 3) {
+                log.info("[骚话] 在群" + groupId + "进行骚话");
+                int type = randomTalk.get(groupId).getType();
+                int random;
+                random = RandomUtil.randomInt(100);
+                if(random <= 50){//一半机率为骚话
+                    random = 1;
+                }else{
+                    if ( type == 1) {
+                        random = RandomUtil.randomInt(2,4);
+                    } else {
+                        random = RandomUtil.randomInt(2,5);
+                    }
+                }
+                JSONObject data = jxQueryApiService.getRandomTalk(random);
+                randomTalk.put(groupId, new RandomTalkSetting(new DateTime(),type));
+                List<Message> messagesList = new ArrayList<>();
+                messagesList.add(BuildTextMessage(data.getString("text")));
+                miraHandler.sendGroupMessage(groupId, messagesList);
+            }
+        }
+    }
+
 
     /*
     * 其他工具

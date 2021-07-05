@@ -30,9 +30,9 @@ public class Jx3Constant {
         JDTJ("绝代天骄", asList("绝代","电八")),
         MJN("梦江南", asList("双梦","双梦镇")),
         PZZ("破阵子", asList("念破","念奴娇")),
-        TEP("天鹅坪", asList("纵月","纵月六只鹅")),
-        FLZT("飞龙在天", asList("飞龙")),
-        QMZJ("青梅煮酒", asList("青梅")),
+        TEP("天鹅坪", asList("纵月")),
+        FLZT("飞龙在天", asList("飞龙","双二")),
+        QMZJ("青梅煮酒", asList("青梅","双四")),
         FTZD("奉天证道", asList("奉天")),
         CAC("长安城", asList("长安")),
         LZHD("龙争虎斗", asList("龙争")),
@@ -57,11 +57,13 @@ public class Jx3Constant {
             allKey.put("开服", Jx3Handler.class.getDeclaredMethod("getServerStatus",String.class));
             allKey.put("服务器", Jx3Handler.class.getDeclaredMethod("getBindServer",String.class));
             allKey.put("金价", Jx3Handler.class.getDeclaredMethod("getGoldPrice",String.class));
-            allKey.put("使用说明",Jx3Handler.class.getDeclaredMethod("getManual",String.class));
+            allKey.put("使用说明",Jx3Handler.class.getDeclaredMethod("getFunction",String.class));
+            noAllKey.put("金价", Jx3Handler.class.getDeclaredMethod("getGoldPriceWithServer",String.class,String.class));
             noAllKey.put("服务器", Jx3Handler.class.getDeclaredMethod("setBindServer",String.class,String.class));
             noAllKey.put("物价", Jx3Handler.class.getDeclaredMethod("getItemPrice",String.class,String.class));
             noAllKey.put("宏", Jx3Handler.class.getDeclaredMethod("getMarco",String.class,String.class));
             noAllKey.put("配装", Jx3Handler.class.getDeclaredMethod("getEquip",String.class,String.class));
+            noAllKey.put("骚话", Jx3Handler.class.getDeclaredMethod("setRandomTalk",String.class,String.class));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -122,7 +124,7 @@ public class Jx3Constant {
     @Getter
     @AllArgsConstructor
     public enum StringStyle {
-        Header(new Font("微软雅黑" , Font.BOLD, HEADER_SIZE),new Color(207,181,59)),
+        HEADER(new Font("微软雅黑" , Font.BOLD, HEADER_SIZE),new Color(207,181,59)),
         TITLE(new Font("微软雅黑" , Font.BOLD, TITLE_SIZE),Color.BLACK),
         CONTEXT(new Font("微软雅黑" , Font.BOLD, CONTEXT_SIZE),Color.BLACK),
         TAIL(new Font("微软雅黑" , Font.BOLD, TAIL_SIZE),Color.GRAY);

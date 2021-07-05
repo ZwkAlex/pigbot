@@ -12,4 +12,7 @@ public interface JxQueryApiModel {
     //不需要当前时间 返回JSONObject
     JSONObject getMacro(String name);
     JSONObject getEquip(String name);
+
+    //其他
+    JSONObject getRandomTalk(int type);
 }

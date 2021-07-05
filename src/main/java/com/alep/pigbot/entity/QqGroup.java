@@ -18,5 +18,6 @@ public class QqGroup {
     @TableId(type = IdType.AUTO)
     private Integer id;
     private String groupId;
+    private int randomTalk;
     private String server;
 }

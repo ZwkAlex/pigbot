@@ -36,7 +36,6 @@ public class MiraiHandler {
     @Resource
     Jx3Handler jx3Handler;
 
-
     /*
     * WebSocket模块
     * */
@@ -54,43 +53,22 @@ public class MiraiHandler {
                 @Override
                 public void onMessage(String message) {
                     log.info("[QQ-Message] 收到消息:{}", message);
-                    SocketData data = JSONObject.parseObject(message, SocketData.class);
-                    if(data.getData() == null || data.getData().getSender() == null) {
+                    SocketData rawData = JSONObject.parseObject(message, SocketData.class);
+                    MessageData data = rawData.getData();
+                    if(data == null || data.getSender() == null) {
                         log.info("[QQ-Message] [无法处理的消息] {}", message);
                         return;
                     }
-                    switch(data.getData().getType()){
+                    switch(data.getType()){
                         case MiraiConstant.MESSAGE_TYPE_FRIEND:
                             log.info("[QQ-Message] Pass private message ");
-                            Test(data.getData().getSender().getId());
+                            Test(data.getSender().getId());
                             break;
                         case MiraiConstant.MESSAGE_TYPE_GROUP:
-                            List<Message> messageChain = data.getData().getMessageChain();
+                            List<Message> messageChain = data.getMessageChain();
+                            String groupId = data.getSender().getGroup().getId();
                             messageChain.forEach(messageVo ->{
-//                                if (messageVo.getType().equals(MiraiConstant.MESSAGE_TYPE_SOURCE)) {
-//                                  预留
-//                                }
-                                if (messageVo.getType().equals(MiraiConstant.MESSAGE_TYPE_TEXT)) {
-                                    String text = messageVo.getText();
-                                    //完全匹配
-                                    try {
-                                        Method allMatchKeyMethod = Jx3Constant.allKey.get(text);
-                                        String groupId = data.getData().getSender().getGroup().getId();
-                                        if (allMatchKeyMethod != null) {
-                                                allMatchKeyMethod.invoke(jx3Handler.getInstance(),groupId);
-                                        } else {
-                                            if(text.contains(" ")){
-                                                for(Map.Entry<String, Method> entry : Jx3Constant.noAllKey.entrySet()){
-                                                    if (text.contains(entry.getKey())) {
-                                                        entry.getValue().invoke(jx3Handler.getInstance(), groupId, text);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } catch (InvocationTargetException | IllegalAccessException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
+                                GroupMessageHandler(groupId,messageVo);
                             });
                             break;
                     }
@@ -193,6 +171,40 @@ public class MiraiHandler {
     * 发送群聊、私聊 回复请求 模块
     * */
 
+    private void GroupMessageHandler(String groupId, Message message){
+        switch(message.getType()){
+            case MiraiConstant.MESSAGE_TYPE_TEXT:
+                String text = message.getText();
+                boolean isCommand = false;
+                try {
+                    Method allMatchKeyMethod = Jx3Constant.allKey.get(text);
+                    if (allMatchKeyMethod != null) {
+                        isCommand = true;
+                        allMatchKeyMethod.invoke(jx3Handler.getInstance(),groupId);
+                    } else {
+                        if(text.contains(" ")){
+                            for(Map.Entry<String, Method> entry : Jx3Constant.noAllKey.entrySet()){
+                                if (text.startsWith(entry.getKey())) {
+                                    isCommand = true;
+                                    entry.getValue().invoke(jx3Handler.getInstance(), groupId, text);
+                                }
+                            }
+                        }
+                    }
+                    if(!isCommand){
+                        jx3Handler.TalkRandom(groupId);
+                    }
+                } catch (InvocationTargetException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case MiraiConstant.MESSAGE_TYPE_IMG:
+                jx3Handler.TalkRandom(groupId);
+                break;
+        }
+
+    }
+
 
     private void Test(String id) {
         try{
@@ -266,4 +278,5 @@ public class MiraiHandler {
                 ""
         );
     }
+
 }

@@ -4,17 +4,12 @@ import com.alep.pigbot.Tool.PicCompiler;
 import com.alep.pigbot.entity.Jx3Response;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Map;
 
 /*
@@ -23,9 +18,6 @@ import java.util.Map;
 @Component
 @Slf4j
 public class Jx3PicCompiler {
-    @Getter
-    @Value("${server.url}")
-    private String url;
 
     public String ItemPriceImageCompiler(Jx3Response itemPrice) {
         String urlPath = null;
@@ -40,7 +32,7 @@ public class Jx3PicCompiler {
                     if(!picCompiler.getHeader()){
                         picCompiler.NewLine(Jx3Constant.HEADER_SIZE + 20);
                         picCompiler.WriteStringCenter(data.getString("exterior")+"·"+data.getString("itemname"),
-                                Jx3Constant.StringStyle.Header);
+                                Jx3Constant.StringStyle.HEADER);
                         picCompiler.NewLine(20);
                         picCompiler.DrawLine();
                         picCompiler.finishHeader();
@@ -76,7 +68,7 @@ public class Jx3PicCompiler {
                 JSONObject data = JSONObject.parseObject(goldPrice.getData());
                 if(!picCompiler.getHeader()){
                     picCompiler.NewLine(Jx3Constant.HEADER_SIZE + 20);
-                    picCompiler.WriteStringCenter(data.getString("server")+"·今日金价",Jx3Constant.StringStyle.Header);
+                    picCompiler.WriteStringCenter(data.getString("server")+"·今日金价",Jx3Constant.StringStyle.HEADER);
                     picCompiler.NewLine(20);
                     picCompiler.DrawLine();
                     picCompiler.finishHeader();
@@ -99,6 +91,34 @@ public class Jx3PicCompiler {
         return urlPath;
     }
 
+    public String FunctionPicCompiler(){
+        PicCompiler picCompiler = new PicCompiler();
+        picCompiler.NewLine(Jx3Constant.HEADER_SIZE);
+        picCompiler.WriteStringCenter("使用说明",Jx3Constant.StringStyle.HEADER);
+        picCompiler.NewLine(20);
+        picCompiler.DrawLine();
+        picCompiler.NewLine(Jx3Constant.TITLE_SIZE+20);
+        picCompiler.WriteStringCenter("以下功能无需提供目标",Jx3Constant.StringStyle.TITLE);
+        for(String key:Jx3Constant.allKey.keySet()){
+            picCompiler.NewLine(Jx3Constant.CONTEXT_SIZE+20);
+            picCompiler.WriteStringCenter(key,Jx3Constant.StringStyle.CONTEXT);
+        }
+        picCompiler.NewLine(Jx3Constant.TITLE_SIZE+20);
+        picCompiler.WriteStringCenter("以下功能必须提供目标 ",Jx3Constant.StringStyle.TITLE);
+        picCompiler.NewLine(Jx3Constant.TITLE_SIZE+20);
+        picCompiler.WriteStringCenter("格式[关键词 目标] 必须包含空格",Jx3Constant.StringStyle.TITLE);
+        for(String key:Jx3Constant.noAllKey.keySet()){
+            picCompiler.NewLine(Jx3Constant.CONTEXT_SIZE+20);
+            picCompiler.WriteStringCenter(key + " 目标",Jx3Constant.StringStyle.CONTEXT);
+        }
+        picCompiler.NewLine(20);
+        picCompiler.DrawLine();
+        picCompiler.NewLine(Jx3Constant.TAIL_SIZE+5);
+        picCompiler.WriteStringRight("贰货猪PigBot",Jx3Constant.StringStyle.TAIL);
+        picCompiler.Finish();
+        return SaveImage(picCompiler,"Manual");
+    }
+
     private void MakeTailWithTime(PicCompiler picCompiler,String time){
         picCompiler.NewLine(20);
         picCompiler.DrawLine();
@@ -110,12 +130,18 @@ public class Jx3PicCompiler {
         picCompiler.WriteStringRight(tailString,Jx3Constant.StringStyle.TAIL);
     }
 
-    private String SaveImage(PicCompiler picCompiler, String timestamp) throws IOException {
-        String fileName = timestamp +"_"+ (int) (Math.random() * 100) ;
-        String filePath = "./local_data/" + fileName + ".png";
-        String urlPath = url + "?id="+ fileName;
-        ImageIO.write(picCompiler.getImage(), "png", new File(filePath));
-        return urlPath;
+    private String SaveImage(PicCompiler picCompiler, String fileNamePrefix){
+        try{
+            String fileName = fileNamePrefix +"_"+ (int) (Math.random() * 100) ;
+            String filePath = "./local_data/" + fileName + ".png";
+            String ip =  InetAddress.getLocalHost().getHostAddress();
+            String urlPath = "http://" + ip + "/image?id="+ fileName;
+            ImageIO.write(picCompiler.getImage(), "png", new File(filePath));
+            return urlPath;
+        }catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }
     }
 
 }

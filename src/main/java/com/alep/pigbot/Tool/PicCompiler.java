@@ -3,7 +3,6 @@ package com.alep.pigbot.Tool;
 import com.alep.pigbot.Jx3.Jx3Constant;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -11,6 +10,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+@Data
 @Slf4j
 public class PicCompiler {
     private static BufferedImage img;
@@ -39,9 +39,9 @@ public class PicCompiler {
     public void WriteStringWithY(int x, int param_y, String text, Jx3Constant.StringStyle style){
         if(img == null) return;
         Graphics2D g = img.createGraphics();
-        if(x == -1) x = (img.getWidth()-getWordWidth(text,style.getFont()))/2;
-        else if(x == -2) x = img.getWidth()-getWordWidth(text,style.getFont()) - 20;
-        else if(x == -3) x = 20;
+        if(x == -1) x = (img.getWidth()-getWordWidth(text,style.getFont()))/2;//居中
+        else if(x == -2) x = img.getWidth()-getWordWidth(text,style.getFont()) - 20;//右对齐
+        else if(x == -3) x = 20;//左对齐
         if(param_y == -1) param_y = y;
         g.setColor(style.getColor());
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
@@ -54,8 +54,8 @@ public class PicCompiler {
         WriteStringWithY(x,-1,text,style);
     }
 
-    public void WriteStringCenterWithY (int y, String text, Jx3Constant.StringStyle style){
-        WriteStringWithY(-1,y,text,style);
+    public void WriteStringCenterWithY (int param_y, String text, Jx3Constant.StringStyle style){
+        WriteStringWithY(-1,param_y,text,style);
     }
 
     public void WriteStringCenter (String text, Jx3Constant.StringStyle style){
@@ -63,7 +63,7 @@ public class PicCompiler {
     }
 
     public void WriteStringRightWithY (int param_y, String text, Jx3Constant.StringStyle style){
-        WriteStringWithY(-2,-1,text,style);
+        WriteStringWithY(-2,param_y,text,style);
     }
 
     public void WriteStringRight (String text, Jx3Constant.StringStyle style){
@@ -71,7 +71,7 @@ public class PicCompiler {
     }
 
     public void WriteStringLeftWithY (int param_y, String text, Jx3Constant.StringStyle style){
-        WriteStringWithY(-3,-1,text,style);
+        WriteStringWithY(-3,param_y,text,style);
     }
 
     public void WriteStringLeft (String text, Jx3Constant.StringStyle style){
