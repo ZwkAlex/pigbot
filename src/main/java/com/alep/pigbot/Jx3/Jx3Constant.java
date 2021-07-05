@@ -59,7 +59,7 @@ public class Jx3Constant {
             allKey.put("金价", Jx3Handler.class.getDeclaredMethod("getGoldPrice",String.class));
             allKey.put("使用说明",Jx3Handler.class.getDeclaredMethod("getFunction",String.class));
             noAllKey.put("金价", Jx3Handler.class.getDeclaredMethod("getGoldPriceWithServer",String.class,String.class));
-            noAllKey.put("服务器", Jx3Handler.class.getDeclaredMethod("setBindServer",String.class,String.class));
+            noAllKey.put("绑定服务器", Jx3Handler.class.getDeclaredMethod("setBindServer",String.class,String.class));
             noAllKey.put("物价", Jx3Handler.class.getDeclaredMethod("getItemPrice",String.class,String.class));
             noAllKey.put("宏", Jx3Handler.class.getDeclaredMethod("getMarco",String.class,String.class));
             noAllKey.put("配装", Jx3Handler.class.getDeclaredMethod("getEquip",String.class,String.class));

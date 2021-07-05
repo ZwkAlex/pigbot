@@ -67,12 +67,14 @@ public class JxQueryApiService implements JxQueryApiModel{
             JSONObject rep = null;
             String repString ;
             switch(type){
-                case 0://彩虹屁
+                case -1:
+                    return null;
+                case 0://骚话
                     repString = HttpUtil.get(SERVER_URL+"/random");
                     rep = getResponseData(repString);
                     log.info("[骚话] rep:{}", repString);
                     break;
-                case 1://骚话
+                case 1://彩虹屁
                     repString = HttpUtil.get(RandomTalk_SERVER_URL+"/chp");
                     rep = JSONObject.parseObject(repString).getJSONObject("data");
                     log.info("[骚话] rep:{}", repString);

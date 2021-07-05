@@ -5,11 +5,11 @@ import com.alep.pigbot.entity.Jx3Response;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
 import java.io.File;
-import java.net.InetAddress;
 import java.util.Map;
 
 /*
@@ -18,6 +18,12 @@ import java.util.Map;
 @Component
 @Slf4j
 public class Jx3PicCompiler {
+
+    @Value("${server.ip}")
+    private String ip;
+
+    @Value("${server.port}")
+    private String port;
 
     public String ItemPriceImageCompiler(Jx3Response itemPrice) {
         String urlPath = null;
@@ -134,8 +140,8 @@ public class Jx3PicCompiler {
         try{
             String fileName = fileNamePrefix +"_"+ (int) (Math.random() * 100) ;
             String filePath = "./local_data/" + fileName + ".png";
-            String ip =  InetAddress.getLocalHost().getHostAddress();
-            String urlPath = "http://" + ip + "/image?id="+ fileName;
+
+            String urlPath = "http://" + ip + ":"+ port +"/image?id="+ fileName;
             ImageIO.write(picCompiler.getImage(), "png", new File(filePath));
             return urlPath;
         }catch(Exception e){

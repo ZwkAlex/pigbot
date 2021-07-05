@@ -377,7 +377,7 @@ public class Jx3Handler {
             }else{
                 messagesList.add(BuildTextMessage("请使用 [开] 或者 [关] 或者 [祖安] 表示你想要的操作，关闭祖安模式请使用 [骚话 开] "));
             }
-
+            log.info("[骚话] 群"+groupId+"设置随机骚话,模式："+qqGroup.getRandomTalk());
         }else{
             messagesList.add(BuildTextMessage("请先绑定服务器后使用 格式[ 绑定服务器 服务器名 ]"));
         }
@@ -389,28 +389,40 @@ public class Jx3Handler {
     public void TalkRandom(String groupId){
         if(!randomTalk.containsKey(groupId)){
             QqGroup qqGroup = qqGroupMapper.selectOne(new LambdaQueryWrapper<QqGroup>().eq(QqGroup::getGroupId, groupId));
+            if(qqGroup == null) return;
             randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),qqGroup.getRandomTalk()));
             log.info("[骚话] 群"+groupId+"设置随机骚话,模式："+qqGroup.getRandomTalk());
         }else {
             if (DateUtil.between(randomTalk.get(groupId).getDate(), new DateTime(), DateUnit.MINUTE) > 3) {
-                log.info("[骚话] 在群" + groupId + "进行骚话");
-                int type = randomTalk.get(groupId).getType();
-                int random;
-                random = RandomUtil.randomInt(100);
-                if(random <= 50){//一半机率为骚话
-                    random = 1;
-                }else{
-                    if ( type == 1) {
-                        random = RandomUtil.randomInt(2,4);
-                    } else {
-                        random = RandomUtil.randomInt(2,5);
-                    }
+                int mode = randomTalk.get(groupId).getMode();
+                int random = -1;
+                switch(mode){
+                    case 0:
+                        return;
+                    case 1:
+                        random = RandomUtil.randomInt(100);
+                        if(random <= 50){//一半机率为骚话
+                            random = 0;
+                        }else{
+                            random = RandomUtil.randomInt(1,4);
+                        }
+                        break;
+                    case 2:
+                        random = RandomUtil.randomInt(100);
+                        if(random <= 50){//一半机率为祖安
+                            random = 4;
+                        }else{
+                            random = RandomUtil.randomInt(0,4);
+                        }
+                        break;
                 }
                 JSONObject data = jxQueryApiService.getRandomTalk(random);
-                randomTalk.put(groupId, new RandomTalkSetting(new DateTime(),type));
+                if(data == null) return;
+                randomTalk.put(groupId, new RandomTalkSetting(new DateTime(),mode));
                 List<Message> messagesList = new ArrayList<>();
                 messagesList.add(BuildTextMessage(data.getString("text")));
                 miraHandler.sendGroupMessage(groupId, messagesList);
+                log.info("[骚话] 在群" + groupId + "进行骚话");
             }
         }
     }
