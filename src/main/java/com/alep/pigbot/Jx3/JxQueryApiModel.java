@@ -8,6 +8,7 @@ public interface JxQueryApiModel {
     Jx3Response getServerStatus(String server);
     Jx3Response getGoldPrice(String server);
     Jx3Response getItemPrice(String name);
+    Jx3Response getSerendipity(String server,String name);
 
     //不需要当前时间 返回JSONObject
     JSONObject getMacro(String name);

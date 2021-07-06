@@ -8,6 +8,7 @@ import com.alep.pigbot.Mirai.MiraiConstant;
 import com.alep.pigbot.Mirai.MiraiHandler;
 import com.alep.pigbot.dao.QqGroupMapper;
 import com.alep.pigbot.entity.*;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -42,6 +43,12 @@ public class Jx3Handler {
     MiraiHandler miraHandler;
     @Resource
     Jx3PicCompiler jx3PicCompiler;
+
+
+    public static void main(String[] args){
+        new Jx3Handler().getSerendipity("1","奇遇 绝代天骄 货猪");
+        return ;
+    }
 
     /*
     * WebSocket 模块
@@ -400,6 +407,43 @@ public class Jx3Handler {
         miraHandler.sendGroupMessage(groupId, messagesList);
     }
 
+    public void getSerendipity(String groupId, String text){
+        List<String> s = TextExtractMultiple(text);
+        List<Message> messagesList = new ArrayList<>();
+        Jx3Response serendipity;
+        String url;
+        switch(s.size()){
+            case 1:
+                QqGroup qqGroup = qqGroupMapper.selectOne(new LambdaQueryWrapper<QqGroup>().eq(QqGroup::getGroupId, groupId));
+                serendipity =jxQueryApiService.getSerendipity(qqGroup.getServer(), s.get(0));
+                if(serendipity == null){
+                    messagesList.add(BuildTextMessage("找不到角色名为["+s.get(0)+"]的数据，或许名称不正确。"));
+                    break;
+                }
+                url = jx3PicCompiler.SerendipityPicCompiler(serendipity);
+                messagesList.add(BuildImageMessage(url));
+                break;
+            case 2:
+                jxQueryApiService = new JxQueryApiService();
+                jx3PicCompiler = new Jx3PicCompiler();
+                if(isServerName(s.get(0))){
+                    serendipity = jxQueryApiService.getSerendipity(s.get(0), s.get(1));
+                    if(serendipity == null){
+                        messagesList.add(BuildTextMessage("找不到角色名为["+s.get(1)+"]的数据，或许名称不正确。"));
+                        break;
+                    }
+                }else{
+                    messagesList.add(BuildTextMessage("未收录服务器["+s.get(0)+"]，或许名称不正确。"));
+                    break;
+                }
+                url = jx3PicCompiler.SerendipityPicCompiler(serendipity);
+                messagesList.add(BuildImageMessage(url));
+                break;
+            default:
+                messagesList.add(BuildTextMessage("查询格式错误，请以空格为分界 [奇遇查询 角色名]或[奇遇查询 服务器 角色名]"));
+        }
+        miraHandler.sendGroupMessage(groupId, messagesList);
+    }
 
     //特殊
     public void TalkRandom(String groupId){
@@ -409,7 +453,7 @@ public class Jx3Handler {
             randomTalk.put(groupId,new RandomTalkSetting(new DateTime(),qqGroup.getRandomTalk()));
             log.info("[骚话] 群"+groupId+"设置随机骚话,模式："+qqGroup.getRandomTalk());
         }else {
-            if (DateUtil.between(randomTalk.get(groupId).getDate(), new DateTime(), DateUnit.MINUTE) >= 2) {
+            if (DateUtil.between(randomTalk.get(groupId).getDate(), new DateTime(), DateUnit.MINUTE) >= 5) {
                 int mode = randomTalk.get(groupId).getMode();
                 int random = -1;
                 switch(mode){
@@ -465,7 +509,7 @@ public class Jx3Handler {
     }
 
     private String TextExtract(String text,String head){
-        return text.replace(head,"").
+        return text.replaceFirst(head,"").
                 replace("\n","")
                 .replace("\t","")
                 .replace(" ","")
@@ -473,6 +517,12 @@ public class Jx3Handler {
                 .replace("PVE","")
                 .replace("pvp","")
                 .replace("PVP","");
+    }
+
+    private List<String> TextExtractMultiple(String text){
+        text = text.replace("\n","").replace("\t","");
+        List<String> textList = Arrays.asList(text.split(" "));
+        return new ArrayList<>(textList.subList(1,textList.size()));
     }
 
     private boolean isServerName(String server) {

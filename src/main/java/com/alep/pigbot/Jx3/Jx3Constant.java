@@ -64,6 +64,7 @@ public class Jx3Constant {
             noAllKey.put("宏", Jx3Handler.class.getDeclaredMethod("getMarco",String.class,String.class));
             noAllKey.put("配装", Jx3Handler.class.getDeclaredMethod("getEquip",String.class,String.class));
             noAllKey.put("骚话", Jx3Handler.class.getDeclaredMethod("setRandomTalk",String.class,String.class));
+            noAllKey.put("奇遇查询", Jx3Handler.class.getDeclaredMethod("getSerendipity", String.class, String.class));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }

@@ -41,7 +41,7 @@ public class Jx3PicCompiler {
                                 Jx3Constant.StringStyle.HEADER);
                         picCompiler.NewLine(20);
                         picCompiler.DrawLine();
-                        picCompiler.finishHeader();
+                        picCompiler.FinishHeader();
                     }
                     if(!region){
                         picCompiler.NewLine(Jx3Constant.TITLE_SIZE + 20) ;
@@ -67,7 +67,6 @@ public class Jx3PicCompiler {
     }
 
     public String GoldPriceImageCompiler(Jx3Response goldPrice) {
-        String urlPath = null;
         try{
             PicCompiler picCompiler = new PicCompiler();
             for( Map.Entry<String, String> entry :Jx3Constant.Gold.entrySet()) {
@@ -77,7 +76,7 @@ public class Jx3PicCompiler {
                     picCompiler.WriteStringCenter(data.getString("server")+"·今日金价",Jx3Constant.StringStyle.HEADER);
                     picCompiler.NewLine(20);
                     picCompiler.DrawLine();
-                    picCompiler.finishHeader();
+                    picCompiler.FinishHeader();
                 }
                 if (data.containsKey(entry.getKey())) {
                     picCompiler.NewLine(Jx3Constant.CONTEXT_SIZE+20);
@@ -90,11 +89,12 @@ public class Jx3PicCompiler {
 
             MakeTailWithTime(picCompiler,picCompiler.TimestampToString(goldPrice.getTime(),Jx3Constant.DayPattern.LONG.getPattern()));
             picCompiler.Finish();
-            urlPath = SaveImage(picCompiler,Long.toString(goldPrice.getTime()));
+            return SaveImage(picCompiler,Long.toString(goldPrice.getTime()));
         }catch(Exception e){
             e.printStackTrace();
+            log.info("[PicCompiler] 合成图片出错 可能是JSON parse 错误");
+            return null;
         }
-        return urlPath;
     }
 
     public String FunctionPicCompiler(){
@@ -125,6 +125,36 @@ public class Jx3PicCompiler {
         return SaveImage(picCompiler,"Manual");
     }
 
+    public String SerendipityPicCompiler(Jx3Response serendipity){
+        try{
+            PicCompiler picCompiler = new PicCompiler();
+            JSONArray dataList = JSONArray.parseArray(serendipity.getData());
+            for(Object obj:dataList){
+                JSONObject data = JSONObject.parseObject(obj.toString());
+                if(!picCompiler.getHeader()){
+                    picCompiler.NewLine(Jx3Constant.HEADER_SIZE + 20);
+                    picCompiler.WriteStringCenter(data.getString("server")+"·"+data.getString("name"), Jx3Constant.StringStyle.HEADER);
+                    picCompiler.NewLine(Jx3Constant.TITLE_SIZE + 20);
+                    picCompiler.WriteStringCenter("奇遇记录", Jx3Constant.StringStyle.TITLE);
+                    picCompiler.NewLine(20);
+                    picCompiler.DrawLine();
+                    picCompiler.FinishHeader();
+                }
+                picCompiler.NewLine(Jx3Constant.CONTEXT_SIZE + 10);
+                picCompiler.WriteStringCenter(
+                        picCompiler.TimestampToString(data.getLong("time"),Jx3Constant.DayPattern.LONG.getPattern())
+                                + data.getString("serendipity"), Jx3Constant.StringStyle.CONTEXT);
+            }
+            MakeTailWithTime(picCompiler,picCompiler.TimestampToString(serendipity.getTime(),Jx3Constant.DayPattern.LONG.getPattern()));
+            picCompiler.Finish();
+            return SaveImage(picCompiler,Long.toString(serendipity.getTime()));
+        }catch(Exception e){
+            e.printStackTrace();
+            log.info("[PicCompiler] 合成图片出错 可能是JSON parse 错误");
+            return null;
+        }
+    }
+
     private void MakeTailWithTime(PicCompiler picCompiler,String time){
         picCompiler.NewLine(20);
         picCompiler.DrawLine();
@@ -140,12 +170,12 @@ public class Jx3PicCompiler {
         try{
             String fileName = fileNamePrefix +"_"+ (int) (Math.random() * 100) ;
             String filePath = "./local_data/" + fileName + ".png";
-
             String urlPath = "http://" + ip + ":"+ port +"/image?id="+ fileName;
             ImageIO.write(picCompiler.getImage(), "png", new File(filePath));
             return urlPath;
         }catch(Exception e){
             e.printStackTrace();
+            log.info("[PicCompiler] 合成图片出错 可能是图片写入出错");
             return null;
         }
     }

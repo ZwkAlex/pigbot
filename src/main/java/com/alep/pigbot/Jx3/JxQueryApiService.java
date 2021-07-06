@@ -1,19 +1,13 @@
 package com.alep.pigbot.Jx3;
 
 
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpUtil;
 import com.alep.pigbot.entity.Jx3Response;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -47,6 +41,16 @@ public class JxQueryApiService implements JxQueryApiModel{
         params.put("name", name);
         String rep = HttpUtil.get(SERVER_URL + "/price", params);
         log.info("[物价] rep:{}", rep);
+        return getResponse(rep);
+    }
+
+    @Override
+    public Jx3Response getSerendipity(String server, String name) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("server", server);
+        params.put("name", name);
+        String rep = HttpUtil.get(SERVER_URL + "/serendipity", params);
+        log.info("[奇遇查询] rep:{}", rep);
         return getResponse(rep);
     }
 
@@ -130,5 +134,6 @@ public class JxQueryApiService implements JxQueryApiModel{
             return null;
         }
     }
+
 
 }

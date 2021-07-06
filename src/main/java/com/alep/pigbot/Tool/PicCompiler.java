@@ -2,6 +2,7 @@ package com.alep.pigbot.Tool;
 
 import com.alep.pigbot.Jx3.Jx3Constant;
 import lombok.Data;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
@@ -27,7 +28,7 @@ public class PicCompiler {
         g.dispose();
     }
 
-
+    @NonNull
     public String TimestampToString(long ts , String pattern){
         DateFormat df = new SimpleDateFormat(pattern);
         if(ts == -1){
@@ -36,6 +37,7 @@ public class PicCompiler {
         return df.format(ts*1000);
     }
 
+    @NonNull
     public void WriteStringWithY(int x, int param_y, String text, Jx3Constant.StringStyle style){
         if(img == null) return;
         Graphics2D g = img.createGraphics();
@@ -50,38 +52,47 @@ public class PicCompiler {
         g.dispose();
     }
 
+    @NonNull
     public void WriteString (int x, String text, Jx3Constant.StringStyle style){
         WriteStringWithY(x,-1,text,style);
     }
 
+    @NonNull
     public void WriteStringCenterWithY (int param_y, String text, Jx3Constant.StringStyle style){
         WriteStringWithY(-1,param_y,text,style);
     }
 
+    @NonNull
     public void WriteStringCenter (String text, Jx3Constant.StringStyle style){
         WriteStringCenterWithY(-1,text,style);
     }
 
+    @NonNull
     public void WriteStringRightWithY (int param_y, String text, Jx3Constant.StringStyle style){
         WriteStringWithY(-2,param_y,text,style);
     }
 
+    @NonNull
     public void WriteStringRight (String text, Jx3Constant.StringStyle style){
         WriteStringRightWithY(-1,text,style);
     }
 
+    @NonNull
     public void WriteStringLeftWithY (int param_y, String text, Jx3Constant.StringStyle style){
         WriteStringWithY(-3,param_y,text,style);
     }
 
+    @NonNull
     public void WriteStringLeft (String text, Jx3Constant.StringStyle style){
         WriteStringLeftWithY(-1,text,style);
     }
 
+    @NonNull
     public void NewLine(int add){
         y += add;
     }
 
+    @NonNull
     public void DrawLine(int param_y){
         if(param_y==-1) param_y = y;
         Graphics2D g = img.createGraphics();
@@ -99,6 +110,7 @@ public class PicCompiler {
         return img;
     }
 
+    @NonNull
     private int getWordWidth(String text,Font font){
         Graphics2D g = img.createGraphics();
         FontMetrics  metrics = g.getFontMetrics(font);
@@ -122,7 +134,7 @@ public class PicCompiler {
         return header;
     }
 
-    public void finishHeader() {
+    public void FinishHeader() {
         header = true;
     }
 }
